@@ -7,6 +7,7 @@ getting started JUnit5 on JAVA Application
 ### stack
 
 - java 17
+- junit 5.8.1
 
 ## reference
 
