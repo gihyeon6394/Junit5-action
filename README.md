@@ -1,6 +1,6 @@
 # JUnit 5
 
-## What is JUni5?
+## What is JUnit5?
 
 <img src="img_1.png"  width="50%"/>
 
@@ -122,7 +122,7 @@ public class DisplayNameGeneratorDemo {
 
 #### test result
 
-<img src="img_2.png"  width="40%"/>
+<img src="img_2.png"  width="70%"/>
 
 ### Display Name 우선순위
 
