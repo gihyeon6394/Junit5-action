@@ -402,7 +402,72 @@ class ExternalCondition {
 
 ## Tagging and Filtering <sup>태그와 필터링</sup>
 
+- `@Tag` 어노테이션을 사용하여 테스트를 태그하고,
+- 테스트 시 필터링 가능
 
+```java
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+@Tag("fast")
+@Tag("model")
+class TaggingDemo {
+
+    @Test
+    @Tag("karina")
+    void testingKarina() {
+    }
+
+    @Test
+    void testSomething() {
+    }
+
+}
+
+```
+
+<img src="img_3.png"  width="40%"/>
+
+## Test Execution Order <sup>테스트 실행 순서</sup>
+
+- default, 테스트 순서는 보장되지 않는 알고리즘에 의해 진행
+- 테스트 순서 지정 가능
+
+### Method Order
+
+- 테스트에 순서가 필요할 떄가 있음
+    - ex. 통합 테스트, 기능 테스트와 같이 단위의 순서가 중요할 떄
+- `@TestMethodOrder` 어노테이션을 사용하여 테스트 순서 지정 가능
+    - `MethodOrderer.DisplayName` : 테스트 메서드 이름 순서
+    - `MethodOrderer.MethodName` : 테스트 메서드 이름 순서
+    - `MethodOrderer.Random` : 무작위 순서
+    - `MethodOrderer.OrderAnnotation` : `@Order` 어노테이션을 사용하여 테스트 순서 지정
+    - ~~`MethodOrderer.Alphanumeric` : 알파벳 순서~~ <sub>deprecated since 6.0</sub>
+
+
+```java
+import org.junit.jupiter.api.*;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class OrderedTestsDemo {
+
+    @Test
+    @Order(1)
+    void first() {
+    }
+
+    @Test
+    @Order(2)
+    void second() {
+    }
+
+    @Test
+    @Order(3)
+    void third() {
+    }
+}
+
+```  
 
 ### action stack
 

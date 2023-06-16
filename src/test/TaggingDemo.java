@@ -6,8 +6,12 @@ import org.junit.jupiter.api.Test;
 class TaggingDemo {
 
     @Test
-    @Tag("taxes")
-    void testingTaxCalculation() {
+    @Tag("karina")
+    void testingKarina() {
+    }
+
+    @Test
+    void testSomething() {
     }
 
 }
