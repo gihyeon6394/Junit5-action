@@ -1,5 +1,8 @@
 # JUnit 5
 
+[Junit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/#overview)를 참고하며,
+부분적으로 JUnit in Action 3rd Edition <sub>written Cătălin Tudose</sub>을 참고한다.
+
 ## What is JUnit5?
 
 <img src="img_1.png"  width="70%"/>
@@ -246,6 +249,7 @@ public class AssertionsDemo {
 
 - JUnit 팀도 third-party assertion library를 사용하는 것을 권장
     - ex. `AssertJ`, `Hamcrest`, `Truth`
+
 ```java
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -256,20 +260,149 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @DisplayName("Assert static methods demo")
 public class AssertionsDemo {
-    
-  private final Idol karina = new Idol.Builder("카리나", 20).isLeader(1).build();
 
-  @Test
-  @DisplayName("third-party library")
-  void thirdPartyLib() {
-    assertThat(karina.getAge(), is(equalTo(20)));
-  }
+    private final Idol karina = new Idol.Builder("카리나", 20).isLeader(1).build();
+
+    @Test
+    @DisplayName("third-party library")
+    void thirdPartyLib() {
+        assertThat(karina.getAge(), is(equalTo(20)));
+    }
 
 }
 
 ```
 
+## Assumptions
+
+- 테스트의 진행 조건 부여 가능
+- 조건이 만족되지 않으면 테스트는 실행되지 않음
+
+```java
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumingThat;
+
+public class AssumptionsDemo {
+
+    private final Idol karina = new Idol.Builder("카리나", 20).isLeader(1).build();
+
+    @Test
+    @DisplayName("test only on ci server")
+    void testOnlyCiServer() {
+        assumeTrue("CI".equals(System.getenv("ENV")));
+    }
+
+    @Test
+    @DisplayName("test only on dev server")
+    void testOnlyDevServer() {
+        assumeTrue("DEV".equals(System.getenv("ENV")),
+                () -> "Aborting test: not on developer workstation");
+    }
+
+    @Test
+    @DisplayName("CI server test and All environment test")
+    void testInAllEnvironments() {
+        assumingThat("CI".equals(System.getenv("ENV")),
+                () -> {
+                    // perform only in CI server
+                    assertEquals(20, karina.getAge());
+                });
+
+        assertEquals("카리나", karina.getMemberName());
+    }
+}
+```
+
+## Disabling Tests
+
+- `@Disabled` 어노테이션을 사용하여 테스트를 비활성화
+- 클래스, 메서드 레벨에 가능
+
+```java
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+public class AssumptionsDemo {
+
+    @Test
+    @Disabled("Disabled until ready for production server")
+    void testProduction() {
+
+    }
+}
+```
+
+## Conditional Test Execution <sup>조건부 테스트 실행</sup>
+
+- 프로그래밍적인 조건부로 테스트 실행
+- `org.junit.jupiter.api.condition` 패키지 : 컨테이너나 테스트를 선언적오르 사용 / 미사용 처리 가능
+
+### OS, Architecture 조건
+
+````java
+public class ConditionTest {
+
+    @TestOnMac
+    void testOnMac() {
+    }
+
+    @Test
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    void onLinuxOrMac() {
+    }
+
+    @Test
+    @EnabledOnJre({JRE.JAVA_8, JRE.JAVA_9})
+    void onlyOnJava89() {
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "os.arch", matches = ".*64.*")
+    void onlyOn64BitArchitectures() {
+    }
+
+    @Test
+    @DisabledIf("customCondition")
+    void disabled() {
+    }
+
+    boolean customCondition() {
+        return true;
+    }
+
+    @Test
+    @EnabledIf("example.ExternalCondition#customCondition")
+    void enabled() {
+    }
+
+}
+// ...
+package example;
+
+class ExternalCondition {
+    static boolean customCondition() {
+        return true;
+    }
+
+}
+
+````
+
+- `@EnabledOnOs`, `@DisabledOnOs`
+- `@EnabledOnJre`, `@DisabledOnJre`
+- `@EnabledOnJreRange`, `@DisabledOnJreRange`
+- `@EnabledInNativeImage`, `@DisabledInNativeImage` : GraalVM Native Image
+- `@EnabledIfSystemProperty`, `@DisabledIfSystemProperty`
+
 --- 
+
+## Tagging and Filtering <sup>태그와 필터링</sup>
+
+
 
 ### action stack
 
