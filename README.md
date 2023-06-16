@@ -2,7 +2,7 @@
 
 ## What is JUnit5?
 
-<img src="img_1.png"  width="50%"/>
+<img src="img_1.png"  width="70%"/>
 
 JUnit 5 = JUnit Platform + JUnit Jupiter + JUnit Vintage
 
