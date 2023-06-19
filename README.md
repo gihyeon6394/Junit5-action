@@ -1,7 +1,7 @@
 # JUnit 5
 
-[Junit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/#overview)를 참고하며,
-부분적으로 JUnit in Action 3rd Edition <sub>written Cătălin Tudose</sub>을 참고한다.
+[Junit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/#overview)를 참고하며,  
+부분적으로 JUnit in Action 3rd Edition <sub>written Cătălin Tudose</sub>을 참고했다.
 
 ## What is JUnit5?
 
@@ -444,7 +444,6 @@ class TaggingDemo {
     - `MethodOrderer.OrderAnnotation` : `@Order` 어노테이션을 사용하여 테스트 순서 지정
     - ~~`MethodOrderer.Alphanumeric` : 알파벳 순서~~ <sub>deprecated since 6.0</sub>
 
-
 ```java
 import org.junit.jupiter.api.*;
 
@@ -469,11 +468,672 @@ class OrderedTestsDemo {
 
 ```  
 
-### action stack
+### Class Order
+
+테스트 클래스의 순서가 필요할 때가 있음
+
+- fail fast mode
+- shortest test plan execution duration mode
+- 그 외 다수
+
+`junit.jupiter.testclass.order.default`의 `ClassOrderer`
+
+- `ClassOrder.ClassName` : 클래스 이름을 기준으로 순서 설정
+- `ClassOrder.DisplayName` : DisplayName을 기준으로 순서 설정
+- `ClassOrder.OrderAnnotation` : `@Order` 어노테이션을 사용하여 테스트 순서 지정
+- `ClassOrder.Random` : 무작위 순서
+
+```java
+import org.junit.jupiter.api.*;
+
+@TestClassOrder(ClassOrderer.OrderAnnotation.class)
+public class OrderedNestedTestClassesDemo {
+
+    @Nested
+    @Order(1)
+    class FirstTest {
+        @Test
+        void test1() {
+        }
+    }
+
+    @Nested
+    @Order(2)
+    class SecondTest {
+        @Test
+        void test2() {
+        }
+    }
+}
+```
+
+## Test Instance Lifecycle
+
+기본값은 `Lifecycle.PER_CLASS` : 메서드마다 테스트 클래스 인스턴스 생성
+
+### per-class mode
+
+- 클래스의 모든 테스트 메서드를 해당 클래스의 단일 테스트 인스턴스에서 실행
+- `@TestInstance(Lifecycle.PER_CLASS)`
+- non-static 메서드, interface default 메서드, `@Nested` 클래스의 메서드에 `@BeforeAll`, `@AfterAll` 선언 가능
+
+### Changing the Default Test Instance Lifecycle
+
+- ex. `-Djunit.jupiter.testinstance.lifecycle.default=per_class`
+- JVM 시스템 파라미터로서 할당 가능
+- `src/test/resources/junit-platform.properties` 파일에 할당 가능
+    - 버전관리 가능해서 용이한 방법
+
+```java
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class LifecycleTest {
+
+    private int flag = 0;
+
+    @Test
+    void plus1() {
+        flag++;
+    }
+
+    @Test
+    void plus2() {
+        flag++;
+    }
+}
+```
+
+## Nested Tests
+
+- `@Nested` : 테스트 메서드를 그룹화
+- Outer class가 실행되고 Inner Class가 실행됨
+- Outer class의 setup code는 항상 실행됨
+
+```java
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.util.EmptyStackException;
+import java.util.Stack;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@DisplayName("A stack")
+public class TestingAStackDemo {
+
+    private Stack<Object> stack;
+
+    @Test
+    @DisplayName("is instantiated with new Stack()")
+    void isInstantiatedWithNew() {
+        new Stack<>(); // stack 인스턴스 생성
+    }
+
+    @Nested
+    @DisplayName("when new")
+    class WhenNew {
+
+        @BeforeEach
+        void createNewStack() {
+            stack = new Stack<>();
+        }
+
+        @Test
+        @DisplayName("is empty")
+        void isEmpty() {
+            assertTrue(stack.isEmpty());
+        }
+
+        @Test
+        @DisplayName("throws EmptyStackException when popped")
+        void throwsExceptionWhenPopped() {
+            assertThrows(EmptyStackException.class, stack::pop);
+        }
+
+        @Test
+        @DisplayName("throws EmptyStackException when peeked")
+        void throwsExceptionWhenPeeked() {
+            assertThrows(EmptyStackException.class, stack::peek);
+        }
+
+        @Nested
+        @DisplayName("after pushing an element")
+        class AfterPushing {
+            String anElement = "an element";
+
+            @BeforeEach
+            void pushAnElement() {
+                stack.push(anElement);
+            }
+
+            @Test
+            @DisplayName("it is no longer empty")
+            void isNotEmpty() {
+                assertFalse(stack.isEmpty());
+            }
+
+            @Test
+            @DisplayName("returns the element when peeked but remains not empty")
+            void returnElementWhenPeeked() {
+                assertEquals(anElement, stack.peek());
+                assertFalse(stack.isEmpty());
+            }
+        }
+    }
+}
+```
+
+#### result
+
+<img src="img_4.png"  width="50%"/>
+
+## DI for Constructors and Methods
+
+- JUnit Jupiter는 테스트 클래스의 생성자와 테스트 메서드에 DI를 지원
+- `ParameterResolver` API : 런타임에 동적으로 파라미터 resolve
+- `TestInfoParameterResolver` : 최근 컨테이너나 테스트의 속성을 제곰 <sub>ex. `displayName`</sub>
+- `RepititionInfoParameterResolver` : `@RepeatedTest`에서만 사용 가능
+- `TestReporterParameterResolver` : 테스트 실행에 대한 추가적인 정보를 생성 가능
+
+## Test Interfaces and Default Methods
+
+- 테스트 어노테이션을 인터페이스 `default` 메서드에 선언 가능
+    - `@Test`, `@RepeatedTest`, `@ParameterizedTest`, `@TestFactory`, `@TestTemplate`, `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`
+
+```java
+// 테스트 클래스
+public class TestInterfaceDemo implements TestLifecycleLogger, TimeExecutionLogger, TestInterfaceDynamicTestsDemo {
+
+    @Test
+    void isEqualValue() {
+        assertEquals(1, 1, "is always equal");
+    }
+}
+
+// 테스트마다 로깅하는 인터페이스
+@TestInstance(Lifecycle.PER_CLASS)
+interface TestLifecycleLogger {
+
+    static final Logger logger = Logger.getLogger(TestLifecycleLogger.class.getName());
+
+    @BeforeAll
+    default void beforeAllTests() {
+        logger.info("Before all tests");
+    }
+
+    @AfterAll
+    default void afterAllTests() {
+        logger.info("After all tests");
+    }
+
+    @BeforeEach
+    default void beforeEachTest(TestInfo testInfo) {
+        logger.info(() -> String.format("About to execute [%s]",
+                testInfo.getDisplayName()));
+    }
+
+    @AfterEach
+    default void afterEachTest(TestInfo testInfo) {
+        logger.info(() -> String.format("Finished executing [%s]",
+                testInfo.getDisplayName()));
+    }
+}
+
+// 테스트 데이터를 동적으로 반환하는 팩터리
+public interface TestInterfaceDynamicTestsDemo {
+
+    @TestFactory
+    default Stream<DynamicTest> dynamicTestsForPalindromes() {
+        return Stream.of("racecar", "radar", "mom", "dad")
+                .map(text -> DynamicTest.dynamicTest(text, () -> {
+                    System.out.println("text = " + text);
+                }));
+    }
+}
+
+@Tag("timed")
+@ExtendWith(TimingExtension.class)
+public interface TimeExecutionLogger {
+}
+
+// 테스트 실행시간을 측정
+public class TimingExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
+    private static final Logger logger = Logger.getLogger(TimingExtension.class.getName());
+
+    private static final String START_TIME = "start time";
+
+
+    @Override
+    public void beforeTestExecution(ExtensionContext extensionContext) throws Exception {
+        getStore(extensionContext).put(START_TIME, System.currentTimeMillis());
+
+    }
+
+    @Override
+    public void afterTestExecution(ExtensionContext extensionContext) throws Exception {
+        Method testMethod = extensionContext.getRequiredTestMethod();
+        long startTime = getStore(extensionContext).remove(START_TIME, long.class);
+        long duration = System.currentTimeMillis() - startTime;
+
+        logger.info(() -> String.format("Method [%s] took %s ms.", testMethod.getName(), duration));
+    }
+
+    private Store getStore(ExtensionContext context) {
+        return context.getStore(ExtensionContext.Namespace.create(getClass(), context.getRequiredTestMethod()));
+    }
+
+}
+
+```
+
+#### 실행 순서
+
+1. `TestLifecycleLogger`
+    1. `beforeAllTests()`
+    2. `beforeEach()`
+2. `TimingExtension` > `beforeTestExecution()`
+3. `TestInterfaceDynamicTestsDemo` > `dynamicTestsForPalindromes()`
+
+## Repeated Tests
+
+- `@RepeatedTest` : n번 반복 테스트
+- `currentRepetition`, `totalRepetitions`
+
+```java
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class RepeatTest {
+
+    @RepeatedTest(value = 10, name = "{displayName} {currentRepetition}/{totalRepetitions}")
+    @DisplayName("repeat test")
+    void repeatedTest() {
+        assertEquals(1, 1);
+        System.out.println("repeatedTest");
+    }
+}
+```
+
+```java
+import org.junit.jupiter.api.*;
+
+import java.util.logging.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class RepeatedTestsDemo {
+
+    private Logger logger = Logger.getLogger(RepeatedTestsDemo.class.getName());
+
+    @BeforeEach
+    void beforeEach(TestInfo testInfo, RepetitionInfo repetitionInfo) {
+        int currentRepetition = repetitionInfo.getCurrentRepetition();
+        int totalRepetitions = repetitionInfo.getTotalRepetitions();
+        String methodName = testInfo.getTestMethod().get().getName();
+        logger.info(String.format("About to execute repetition %d of %d for %s", currentRepetition, totalRepetitions, methodName));
+    }
+
+    @RepeatedTest(10)
+    void repeatedTest() {
+        // ...
+    }
+
+    @RepeatedTest(value = 1, name = "{displayName} {currentRepetition}/{totalRepetitions}")
+    @DisplayName("Repeat!")
+    void customDisplayName(TestInfo testInfo) {
+        assertEquals(testInfo.getDisplayName(), "Repeat! 1/1");
+    }
+
+    @RepeatedTest(value = 1, name = RepeatedTest.LONG_DISPLAY_NAME)
+    @DisplayName("Details...")
+    void customDisplayNameWithLongPattern(TestInfo testInfo) {
+        assertEquals("Details... :: repetition 1 of 1", testInfo.getDisplayName());
+    }
+
+    @RepeatedTest(value = 5, name = "Wiederholung {currentRepetition} von {totalRepetitions}")
+    void repeatedTestInGerman() {
+        // ...
+    }
+}
+```
+
+#### result
+
+<img src="img_5.png"  width="40%"/>
+
+## Parameterized Tests
+
+### `@ValueSource`
+
+- 리터럴 값을 담는 1차배열 가능
+    - `short`, `byte`, `int`, `long`, `float`, `double`, `char`, `boolean`, `java.lang.String`, `java.lang.Class`
+- `@AutoCloseable` 구현체를 사용하려면 `@ParameterizedTest(autoCloseArguments = false)`를 통해 비활성화해서 재사용 가능
+
+```java
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class ParamTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"karina", "minzi", "hani"})
+    void test1(String name) {
+        assertTrue(name.length() < 7);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource // @NullSource + @EmptySource
+    @ValueSource(strings = {" ", "   ", "\t", "\n"})
+    void nullEmptyAndBlankStrings(String text) {
+        assertTrue(text == null || text.trim().isEmpty());
+    }
+}
+```
+
+<img src="img_6.png"  width="30%"/>
+
+### `@EnumSource`
+
+- Enum 상수 주입
+
+```java
+
+public class ParamTest {
+
+    private Logger logger = Logger.getLogger(ParamTest.class.getName());
+
+    @ParameterizedTest
+    @EnumSource
+    void testWithEnumSourceWithAutoDetection(ChronoUnit unit) {
+        logger.info(unit.toString());
+        assertNotNull(unit);
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = {"DAYS", "HOURS"})
+    void testWithEnumSourceInclude(ChronoUnit unit) {
+        logger.info(unit.toString());
+        assertTrue(EnumSet.of(ChronoUnit.DAYS, ChronoUnit.HOURS).contains(unit));
+    }
+
+    @ParameterizedTest
+    @EnumSource(mode = EXCLUDE, names = {"ERAS", "FOREVER"})
+    void testEnumSourceExclude(ChronoUnit unit) {
+        logger.info(unit.toString());
+        assertFalse(EnumSet.of(ChronoUnit.ERAS, ChronoUnit.FOREVER).contains(unit));
+    }
+
+    @ParameterizedTest
+    @EnumSource(mode = MATCH_ALL, names = "^.*DAYS$")
+    void testWithEnumSourceRegex(ChronoUnit unit) {
+        assertTrue(unit.name().endsWith("DAYS"));
+    }
+
+}
+```
+
+### `@MethodSource`
+
+- 1개 이상의 팩터리 메서드를 참조
+
+```java
+import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+
+public class ParamTest {
+
+    private Logger logger = Logger.getLogger(ParamTest.class.getName());
+
+    @ParameterizedTest
+    @MethodSource("idolProvider")
+    void testWithExplicitLocalMethodSource(String argument) {
+        logger.info(argument);
+        assertNotNull(argument);
+    }
+
+    static Stream<String> idolProvider() {
+        return Stream.of("karina", "minzi", "hani");
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testWithDefaultLocalMethodSource(String argument) {
+        logger.info(argument);
+        assertNotNull(argument);
+    }
+
+    static Stream<String> testWithDefaultLocalMethodSource() {
+        return Stream.of("karina", "minzi", "hani");
+    }
+
+    @ParameterizedTest
+    @MethodSource("idolGroupProvider")
+    void testWithMultiArgMethodSource(String groupName, int num, List<String> memberList) {
+        assertNotNull(groupName);
+        assertTrue(num >= 1);
+        assertTrue(memberList.size() > 0);
+    }
+
+    static Stream<Arguments> idolGroupProvider() {
+        return Stream.of(
+                Arguments.of("NewJeans", 1, List.of("hani", "minzi")),
+                Arguments.of("IVE", 2, List.of("Rei")),
+                Arguments.of("IU", 3, List.of("solo"))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("IdolProvider#idolGroupProvider")
+    void testWithExternalMethodSource(String groupName, int num, List<String> memberList) {
+        assertNotNull(groupName);
+        assertTrue(num >= 1);
+        assertTrue(memberList.size() > 0);
+    }
+
+    class IdolProvider {
+        static Stream<Arguments> idolGroupProvider() {
+            return Stream.of(
+                    Arguments.of("NewJeans", 1, List.of("hani", "minzi")),
+                    Arguments.of("IVE", 2, List.of("Rei")),
+                    Arguments.of("IU", 3, List.of("solo"))
+            );
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("range")
+    void testWIthRangeMethodSource(int argument) {
+        logger.info("argument : " + argument);
+        assertNotEquals(9, argument);
+    }
+
+    static IntStream range() {
+        return IntStream.range(0, 20).skip(10);
+    }
+
+    @RegisterExtension // IntegerResolver 확장
+    static final IntegerResolver integerResolver = new IntegerResolver();
+
+    @ParameterizedTest
+    @MethodSource("factoryMethodWithArguments")
+    void testWithFactoryMethodWithArguments(String argument) {
+        assertTrue(argument.startsWith("2"));
+    }
+
+    static Stream<Arguments> factoryMethodWithArguments(int quantity) {
+        return Stream.of(
+                arguments(quantity + " apples"),
+                arguments(quantity + " lemons")
+
+        );
+    }
+
+    static class IntegerResolver implements ParameterResolver {
+
+        @Override
+        public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+            return parameterContext.getParameter().getType() == int.class;
+        }
+
+        @Override
+        public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+            return 2;
+        }
+    }
+}
+```
+
+### `@CsvSource`
+
+- CSV 포맷의 문자열을 주입
+
+```java
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import java.util.logging.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+/**
+ * @ParameterizedTest 예시
+ */
+public class ParamTest {
+
+    private Logger logger = Logger.getLogger(ParamTest.class.getName());
+
+    @ParameterizedTest
+    @CsvSource({"karina, Aespa", "minzi, NewJeans", "hani, NewJeans"})
+    void testWithCsvSource(String name, String group) {
+        logger.info(name + " " + group);
+        assertNotNull(name);
+        assertNotNull(group);
+    }
+
+    @ParameterizedTest(name = "[{index}] {arguments}")
+    @CsvSource(useHeadersInDisplayName = true, textBlock = """
+            name, group
+            karina, Aespa
+            minzi, NewJeans
+            hani, NewJeans
+            """)
+    void testWithCsvSourceWithHeader(String name, String group) {
+        logger.info(name + " " + group);
+        assertNotNull(name);
+        assertNotNull(group);
+    }
+
+    @ParameterizedTest
+    @CsvSource(useHeadersInDisplayName = true, delimiter = '|', quoteCharacter = '"', textBlock = """
+            name| group
+            "karina"| "Aespa"
+            "minzi"| "NewJeans"
+            "hani"| "NewJeans"
+            """)
+    void testWithCsvSourceWithDelimiterAndQuote(String name, String group) {
+        logger.info(name + " " + group);
+        assertNotNull(name);
+        assertNotNull(group);
+    }
+}
+```
+
+### `@CsvFileSource`
+
+- CSV 파일을 주입
+
+```java
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvFileSource;
+
+import java.util.logging.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+public class ParamTest {
+
+    private Logger logger = Logger.getLogger(ParamTest.class.getName());
+
+    @ParameterizedTest
+    @CsvFileSource(resources = "resource/Idol.csv", numLinesToSkip = 1)
+    void testWithCsvFileSource(String name, String group) {
+        logger.info(name + " " + group);
+        assertNotNull(name);
+        assertNotNull(group);
+    }
+}
+```
+
+### `@ArgumentsSource`
+
+- `ArgumentsProvider` 구현체를 통해 인자를 주입
+
+```java
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+
+import java.util.logging.Logger;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+public class ParamTest {
+
+    private Logger logger = Logger.getLogger(ParamTest.class.getName());
+
+
+    @ParameterizedTest
+    @ArgumentsSource(IdolArgumentProvider.class)
+    void testWithArgumentsSource(String name) {
+        logger.info(name);
+        assertNotNull(name);
+    }
+    
+    static class IdolArgumentProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
+            return Stream.of("karina", "minzi", "hani").map(Arguments::of);
+        }
+    }
+}
+
+```
+
+### stack
 
 - JAVA Application
 - java 17
 - junit 5.8.1
+    - `junit-jupiter-5.9.1.jar`
+    - `junit-jupiter-api-5.9.1.jar`
+    - `junit-jupiter-params-5.9.1.jar`
+    - `junit-platform-commons-1.9.1.jar`
+    - `junit-jupiter-engine-5.9.1.jar`
+    - `junit-platform-engine-1.9.1.jar`
 
 ## reference
 
