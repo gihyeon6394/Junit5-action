@@ -57,6 +57,9 @@ class MyFirstJUnitJupiterTests {
 
 `@DisplayName` : 테스트 클래스와 테스트 메서드에 사용할 수 있는 테스트 이름을 지정
 
+<details>
+    <summary>Demo</summary>
+
 ```java
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -81,8 +84,12 @@ class DisplayNameDemo {
 
 }
 ```
+</details>
 
 ### Display Name Generators
+<details>
+    <summary>Demo</summary>
+
 
 ```java
 import org.junit.jupiter.api.*;
@@ -123,9 +130,16 @@ public class DisplayNameGeneratorDemo {
 
 ```
 
-#### test result
 
-<img src="img_2.png"  width="70%"/>
+</details>
+
+<details>
+    <summary>Demo result</summary>
+
+  <img src="img_2.png"  width="70%"/>
+
+</details>
+
 
 ### Display Name 우선순위
 
