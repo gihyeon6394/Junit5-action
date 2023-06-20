@@ -84,12 +84,13 @@ class DisplayNameDemo {
 
 }
 ```
+
 </details>
 
 ### Display Name Generators
+
 <details>
     <summary>Demo</summary>
-
 
 ```java
 import org.junit.jupiter.api.*;
@@ -130,7 +131,6 @@ public class DisplayNameGeneratorDemo {
 
 ```
 
-
 </details>
 
 <details>
@@ -139,7 +139,6 @@ public class DisplayNameGeneratorDemo {
   <img src="img_2.png"  width="70%"/>
 
 </details>
-
 
 ### Display Name 우선순위
 
@@ -151,6 +150,9 @@ public class DisplayNameGeneratorDemo {
 ## Assertions
 
 - `org.junit.jupiter.api.Assertions` : 테스트 결과를 검증하는 메서드를 제공
+
+<details>
+    <summary>Demo</summary>
 
 ````java
 import org.junit.jupiter.api.DisplayName;
@@ -259,10 +261,15 @@ public class AssertionsDemo {
 
 ````
 
+</details>
+
 ### third-party assertion library
 
 - JUnit 팀도 third-party assertion library를 사용하는 것을 권장
     - ex. `AssertJ`, `Hamcrest`, `Truth`
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.DisplayName;
@@ -284,13 +291,17 @@ public class AssertionsDemo {
     }
 
 }
-
 ```
+
+</details>
 
 ## Assumptions
 
 - 테스트의 진행 조건 부여 가능
 - 조건이 만족되지 않으면 테스트는 실행되지 않음
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.DisplayName;
@@ -331,10 +342,15 @@ public class AssumptionsDemo {
 }
 ```
 
+</details>
+
 ## Disabling Tests
 
 - `@Disabled` 어노테이션을 사용하여 테스트를 비활성화
 - 클래스, 메서드 레벨에 가능
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.Disabled;
@@ -350,12 +366,17 @@ public class AssumptionsDemo {
 }
 ```
 
+</details>
+
 ## Conditional Test Execution <sup>조건부 테스트 실행</sup>
 
 - 프로그래밍적인 조건부로 테스트 실행
 - `org.junit.jupiter.api.condition` 패키지 : 컨테이너나 테스트를 선언적오르 사용 / 미사용 처리 가능
 
 ### OS, Architecture 조건
+
+<details>
+    <summary>Demo</summary>
 
 ````java
 public class ConditionTest {
@@ -406,6 +427,8 @@ class ExternalCondition {
 
 ````
 
+</details>
+
 - `@EnabledOnOs`, `@DisabledOnOs`
 - `@EnabledOnJre`, `@DisabledOnJre`
 - `@EnabledOnJreRange`, `@DisabledOnJreRange`
@@ -418,6 +441,9 @@ class ExternalCondition {
 
 - `@Tag` 어노테이션을 사용하여 테스트를 태그하고,
 - 테스트 시 필터링 가능
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.Tag;
@@ -440,6 +466,8 @@ class TaggingDemo {
 
 ```
 
+</details>
+
 <img src="img_3.png"  width="40%"/>
 
 ## Test Execution Order <sup>테스트 실행 순서</sup>
@@ -457,6 +485,9 @@ class TaggingDemo {
     - `MethodOrderer.Random` : 무작위 순서
     - `MethodOrderer.OrderAnnotation` : `@Order` 어노테이션을 사용하여 테스트 순서 지정
     - ~~`MethodOrderer.Alphanumeric` : 알파벳 순서~~ <sub>deprecated since 6.0</sub>
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.*;
@@ -482,6 +513,8 @@ class OrderedTestsDemo {
 
 ```  
 
+</details>
+
 ### Class Order
 
 테스트 클래스의 순서가 필요할 때가 있음
@@ -496,6 +529,9 @@ class OrderedTestsDemo {
 - `ClassOrder.DisplayName` : DisplayName을 기준으로 순서 설정
 - `ClassOrder.OrderAnnotation` : `@Order` 어노테이션을 사용하여 테스트 순서 지정
 - `ClassOrder.Random` : 무작위 순서
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.*;
@@ -521,6 +557,8 @@ public class OrderedNestedTestClassesDemo {
 }
 ```
 
+</details>
+
 ## Test Instance Lifecycle
 
 기본값은 `Lifecycle.PER_CLASS` : 메서드마다 테스트 클래스 인스턴스 생성
@@ -537,6 +575,9 @@ public class OrderedNestedTestClassesDemo {
 - JVM 시스템 파라미터로서 할당 가능
 - `src/test/resources/junit-platform.properties` 파일에 할당 가능
     - 버전관리 가능해서 용이한 방법
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.Test;
@@ -559,11 +600,16 @@ public class LifecycleTest {
 }
 ```
 
+</details>
+
 ## Nested Tests
 
 - `@Nested` : 테스트 메서드를 그룹화
 - Outer class가 실행되고 Inner Class가 실행됨
 - Outer class의 setup code는 항상 실행됨
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 
@@ -642,9 +688,14 @@ public class TestingAStackDemo {
 }
 ```
 
-#### result
+</details>
+
+<details>
+    <summary>Demo result</summary>
 
 <img src="img_4.png"  width="50%"/>
+
+</details>
 
 ## DI for Constructors and Methods
 
@@ -658,6 +709,9 @@ public class TestingAStackDemo {
 
 - 테스트 어노테이션을 인터페이스 `default` 메서드에 선언 가능
     - `@Test`, `@RepeatedTest`, `@ParameterizedTest`, `@TestFactory`, `@TestTemplate`, `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 // 테스트 클래스
@@ -745,6 +799,8 @@ public class TimingExtension implements BeforeTestExecutionCallback, AfterTestEx
 
 ```
 
+</details>
+
 #### 실행 순서
 
 1. `TestLifecycleLogger`
@@ -757,6 +813,9 @@ public class TimingExtension implements BeforeTestExecutionCallback, AfterTestEx
 
 - `@RepeatedTest` : n번 반복 테스트
 - `currentRepetition`, `totalRepetitions`
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.DisplayName;
@@ -774,6 +833,11 @@ public class RepeatTest {
     }
 }
 ```
+
+</details>
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.*;
@@ -818,15 +882,23 @@ public class RepeatedTestsDemo {
 }
 ```
 
-#### result
+</details>
+
+<details>
+    <summary>Demo result</summary>
 
 <img src="img_5.png"  width="40%"/>
+
+</details>
 
 ## [Parameterized Tests](Parameterized_Tests/README.md)
 
 ## Lifecycle and Interoperability
 
 - `@ParameterizedTest`는 `@Test`와 동일한 라이프사이클을 가짐
+
+<details>
+    <summary>Demo</summary>
 
 ```java
 import org.junit.jupiter.api.AfterEach;
@@ -841,7 +913,7 @@ import java.util.logging.Logger;
 public class LifeCycleInteroperablilityTest {
 
     private Logger logger = Logger.getLogger(LifeCycleInteroperablilityTest.class.getName());
-    
+
     @BeforeEach
     void beforeEach(TestInfo testInfo) {
         logger.info("beforeEach() testInfo : " + testInfo.toString());
@@ -861,7 +933,7 @@ public class LifeCycleInteroperablilityTest {
 }
 ```
 
-
+</details>
 
 ### stack
 
