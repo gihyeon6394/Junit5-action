@@ -1529,7 +1529,25 @@ public class LifeCycleInteroperablilityTest {
 
 </details>
 
-### stack
+## Dynamic Tests
+
+- 정적인 테스트
+    - 일반적인 JUnit 테스트
+    - comile-time에 테스트 내용이 정해지고,
+    - run time에는 수정 불가
+- `DynamicTest` : run time에 생성되는 테스트
+    - 동적인 테스트는 반드시펙터리 메서드에 의해 생성되어야함
+
+#### `@TestFactory`
+
+- 테스트 케이스를 지원하는 펙터리
+- 다이나믹 테스트는 팩터리의 산출물
+- 단일 `DynamicNode` 또는 `Stream`, `Collection`, `Iterable`, `Iterator`를 반환
+- `private`, `static` 불가
+
+--- 
+
+## stack
 
 - JAVA Application
 - java 17
