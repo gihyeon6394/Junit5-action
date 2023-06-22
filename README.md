@@ -416,7 +416,6 @@ public class ConditionTest {
 
 }
 // ...
-package example;
 
 class ExternalCondition {
     static boolean customCondition() {
@@ -1544,6 +1543,112 @@ public class LifeCycleInteroperablilityTest {
 - 다이나믹 테스트는 팩터리의 산출물
 - 단일 `DynamicNode` 또는 `Stream`, `Collection`, `Iterable`, `Iterator`를 반환
 - `private`, `static` 불가
+
+## Timeouts
+
+- 테스트 진행 시간을 테스트 성공 조건에 줌
+
+<details>
+    <summary>Demo</summary>
+
+```java
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
+import java.util.concurrent.TimeUnit;
+
+public class TimeoutDemo {
+
+    @BeforeEach
+    @Timeout(5)
+    void setUp() {
+        // fails if execution time exceeds 5 seconds
+    }
+
+    @Test
+    @Timeout(value = 500, unit = TimeUnit.MILLISECONDS)
+    void failsIfExecutionTimeExceeds500Milliseconds() {
+        // fails if execution time exceeds 500 milliseconds
+    }
+
+    @Test
+    @Timeout(value = 500, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void failsIfExecutionTimeExceeds500MillisecondsWithSeparateThread() {
+        // this test will be executed in a separate thread
+    }
+}
+```
+
+</details>
+
+## Parallel Execution
+
+- 기본적으로 single thread, 순차적 실행
+- Parallel은 5.3부터 가능
+- `SAME_THREAD` : 기본값, 부모 스레드와 동일한 스레드에서 실행, `@BeforeAll`, `@AfterAll`과 동일한 스레드
+- `CONCURRENT` : 별도의 스레드에서 실행
+
+<details>
+    <summary>Demo</summary>
+
+```java
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.parallel.ResourceLock;
+
+import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.parallel.ResourceAccessMode.READ;
+import static org.junit.jupiter.api.parallel.ResourceAccessMode.READ_WRITE;
+import static org.junit.jupiter.api.parallel.Resources.SYSTEM_PROPERTIES;
+
+@Execution(ExecutionMode.CONCURRENT)
+public class SharedResourcesDemo {
+
+    private Properties backup;
+
+    @BeforeEach
+    void backup() {
+        backup = new Properties();
+        backup.putAll(System.getProperties());
+    }
+
+    @AfterEach
+    void restore() {
+        System.setProperties(backup);
+    }
+
+
+    @Test
+    @ResourceLock(value = SYSTEM_PROPERTIES, mode = READ)
+    void customPropertyIsNotSetByDefault() {
+        assertNull(System.getProperty("my.prop"));
+    }
+
+    @Test
+    @ResourceLock(value = SYSTEM_PROPERTIES, mode = READ_WRITE)
+    void canSetCustomPropertyToApple() {
+        System.setProperty("my.prop", "apple");
+        assertEquals("apple", System.getProperty("my.prop"));
+    }
+
+    @Test
+    @ResourceLock(value = SYSTEM_PROPERTIES, mode = READ_WRITE)
+    void canSetCustomPropertyToBanana() {
+        System.setProperty("my.prop", "banana");
+        assertEquals("banana", System.getProperty("my.prop"));
+    }
+}
+
+```
+
+</details>
 
 --- 
 
